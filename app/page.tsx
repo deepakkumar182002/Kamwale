@@ -1,10 +1,8 @@
-import {redirect} from "next/navigation";
+import { redirect } from "next/navigation";
 
 async function Page() {
-  <>
-  Current Date: {new Date().toLocaleDateString()}
-  redirect("/dashboard")
-  </>
+  redirect("/dashboard");
 }
 
 export default Page;
+// Current Date: {new Date().toLocaleDateString()}
