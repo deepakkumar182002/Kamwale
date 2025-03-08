@@ -84,7 +84,7 @@
     @apply md:!justify-start space-x-2 md:!my-1.5 !px-3 w-full;
   }
 
-  /* .menuItem {
+  .menuItem {
     @apply dark:hover:bg-[#3C3C3C] !cursor-pointer flex items-center gap-x-2 !px-4 !py-3.5 !m-1.5 !rounded-lg font-medium;
   }
 
@@ -94,7 +94,18 @@
 
   .dialogContent {
     @apply bg-white dark:bg-neutral-800 !p-0 overflow-hidden !gap-0;
-  } */
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 
