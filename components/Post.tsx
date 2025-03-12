@@ -1,10 +1,10 @@
 import { auth } from "@/auth";
 import UserAvatar from "@/components/UserAvatar";
 import { PostWithExtras } from "@/lib/definitions";
-import Timestamp from "./Timestamp";
 import Image from "next/image";
 import Link from "next/link";
 import Comments from "./Comments";
+import Timestamp from "./Timestamp";
 import { Card } from "./ui/card";
 import PostOptions from "./PostOptions";
 import PostActions from "./PostActions";

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import ReactTimeago from "react-timeago"
+import ReactTimeago from "react-timeago";
 
 type Props = {
   createdAt: Date;

@@ -5,4 +5,3 @@ async function Page() {
 }
 
 export default Page;
-// Current Date: {new Date().toLocaleDateString()}
