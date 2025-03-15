@@ -23,7 +23,7 @@ async function Post({ post }: { post: PostWithExtras }) {
           <UserAvatar user={post.user} />
           <div className="text-sm">
             <p className="space-x-1">
-              <span className="font-semibold">{username}</span>
+            <Link href={`/dashboard/${username}`}  className="font-semibold">{username}</Link>
               <span
                 className="font-medium text-neutral-500 dark:text-neutral-400
                       text-xs
@@ -55,7 +55,7 @@ async function Post({ post }: { post: PostWithExtras }) {
 
       {post.caption && (
         <div className="text-sm leading-none flex items-center space-x-2 font-medium px-3 sm:px-0">
-          <Link href={`/dashboard/${username}`} className="font-bold">
+          <Link href={`/dashboard/${username}`} className="font-bold text-red-600">
             {username}
           </Link>
           <p>{post.caption}</p>
