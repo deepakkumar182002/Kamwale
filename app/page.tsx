@@ -4,5 +4,4 @@ async function Page() {
   redirect("/dashboard");
 }
 
-export default Page;
-// Current Date: {new Date().toLocaleDateString()}
+export default Page;// Current Date: {new Date().toLocaleDateString()}

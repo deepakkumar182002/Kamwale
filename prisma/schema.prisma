@@ -65,14 +65,13 @@ model User {
     saved         SavedPost[]
     likes         Like[]
     comments      Comment[]
-    // followedBy    Follows[]   @relation("following")
-    // following     Follows[]   @relation("follower")
+    followedBy    Follows[]   @relation("following")
+    following     Follows[]   @relation("follower")
     accounts      Account[]
     sessions      Session[]
 
     @@map(name: "users")
 }
-
 
 model Post {
     id        String      @id @default(cuid())
@@ -130,4 +129,18 @@ model Comment {
 
     @@index([postId])
     @@index([userId])
+}
+
+model Follows {
+    id          String   @id @default(cuid())
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+    followerId  String
+    following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+    followingId String
+
+    @@unique([followerId, followingId])
+    @@index([followerId])
+    @@index([followingId])
 }
