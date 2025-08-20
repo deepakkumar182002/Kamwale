@@ -298,7 +298,7 @@ export async function updatePost(values: z.infer<typeof UpdatePost>) {
     };
   }
 
-  const { id, caption } = validatedFields.data;
+  const { id, fileUrl, caption } = validatedFields.data;
 
   const post = await prisma.post.findUnique({
     where: {
@@ -317,17 +317,16 @@ export async function updatePost(values: z.infer<typeof UpdatePost>) {
         id,
       },
       data: {
+        fileUrl,
         caption,
       },
     });
   } catch (error) {
-    return {
-      message: "Database Error: Failed to Update Post.",
-    };
+    return { message: "Database Error: Failed to Update Post." };
   }
 
   revalidatePath("/dashboard");
-  return { message: "Updated Post." };
+  redirect("/dashboard");
 }
 
 export async function updateProfile(values: z.infer<typeof UpdateUser>) {
@@ -342,7 +341,7 @@ export async function updateProfile(values: z.infer<typeof UpdateUser>) {
     };
   }
 
-  const { name, username, bio, image } = validatedFields.data;
+  const { bio, gender, image, name, username, website } = validatedFields.data;
 
   try {
     await prisma.user.update({
@@ -350,20 +349,19 @@ export async function updateProfile(values: z.infer<typeof UpdateUser>) {
         id: userId,
       },
       data: {
-        name,
         username,
-        bio,
+        name,
         image,
+        bio,
+        gender,
+        website,
       },
     });
+    revalidatePath("/dashboard");
+    return { message: "Updated Profile." };
   } catch (error) {
-    return {
-      message: "Database Error: Failed to Update Profile.",
-    };
+    return { message: "Database Error: Failed to Update Profile." };
   }
-
-  revalidatePath("/dashboard");
-  return { message: "Updated Profile." };
 }
 
 export async function followUser(formData: FormData) {
@@ -386,7 +384,9 @@ export async function followUser(formData: FormData) {
   const follows = await prisma.follows.findUnique({
     where: {
       followerId_followingId: {
+        // followerId is of the person who wants to follow
         followerId: userId,
+        // followingId is of the person who is being followed
         followingId: id,
       },
     },

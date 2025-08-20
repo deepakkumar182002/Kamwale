@@ -43,6 +43,7 @@ CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "username" TEXT,
+    "password" TEXT,
     "bio" TEXT,
     "website" TEXT,
     "gender" TEXT,
@@ -53,6 +54,14 @@ CREATE TABLE "users" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Follows" (
+    "followerId" TEXT NOT NULL,
+    "followingId" TEXT NOT NULL,
+
+    CONSTRAINT "Follows_pkey" PRIMARY KEY ("followerId","followingId")
 );
 
 -- CreateTable
@@ -101,17 +110,6 @@ CREATE TABLE "Comment" (
     CONSTRAINT "Comment_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Follows" (
-    "id" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "followerId" TEXT NOT NULL,
-    "followingId" TEXT NOT NULL,
-
-    CONSTRAINT "Follows_pkey" PRIMARY KEY ("id")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
 
@@ -137,6 +135,12 @@ CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE INDEX "Follows_followerId_idx" ON "Follows"("followerId");
+
+-- CreateIndex
+CREATE INDEX "Follows_followingId_idx" ON "Follows"("followingId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Post_fileUrl_key" ON "Post"("fileUrl");
 
 -- CreateIndex
@@ -159,12 +163,3 @@ CREATE INDEX "Comment_postId_idx" ON "Comment"("postId");
 
 -- CreateIndex
 CREATE INDEX "Comment_user_id_idx" ON "Comment"("user_id");
-
--- CreateIndex
-CREATE INDEX "Follows_followerId_idx" ON "Follows"("followerId");
-
--- CreateIndex
-CREATE INDEX "Follows_followingId_idx" ON "Follows"("followingId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Follows_followerId_followingId_key" ON "Follows"("followerId", "followingId");

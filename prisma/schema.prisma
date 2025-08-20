@@ -1,13 +1,24 @@
+
+
+// generator client {
+//   provider = "prisma-client-js"
+// }
+
+// datasource db {
+//   provider  = "postgresql"
+//   url       = env("DATABASE_URL")
+//   relationMode = "prisma"
+// }
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider     = "postgresql"
-    url          = env("DATABASE_URL")
-    relationMode = "prisma"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+//   directUrl = env("DIRECT_URL")
+  relationMode = "prisma"
 }
-
 model VerificationToken {
     id         Int      @id @default(autoincrement())
     identifier String
@@ -53,6 +64,8 @@ model User {
     id            String      @id @default(cuid())
     name          String?
     username      String?     @unique
+    // optional password for users who register manually (OAuth users may have null)
+    password      String?
     bio           String?
     website       String?
     gender        String?
@@ -71,6 +84,17 @@ model User {
     sessions      Session[]
 
     @@map(name: "users")
+}
+
+model Follows {
+    follower    User   @relation("follower", fields: [followerId], references: [id])
+    followerId  String
+    following   User   @relation("following", fields: [followingId], references: [id])
+    followingId String
+
+    @@id([followerId, followingId])
+    @@index([followerId])
+    @@index([followingId])
 }
 
 model Post {
@@ -129,18 +153,4 @@ model Comment {
 
     @@index([postId])
     @@index([userId])
-}
-
-model Follows {
-    id          String   @id @default(cuid())
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-    followerId  String
-    following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
-    followingId String
-
-    @@unique([followerId, followingId])
-    @@index([followerId])
-    @@index([followingId])
 }

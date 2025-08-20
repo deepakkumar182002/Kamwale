@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Like } from "@prisma/client";
 import { Heart } from "lucide-react";
 import { useOptimistic } from "react";
-import ActionIcon from "./ActionIcon"
+import ActionIcon from "./ActionIcon";
 import { likePost } from "@/lib/actions";
 
 function LikeButton({

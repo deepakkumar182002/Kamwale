@@ -1,10 +1,10 @@
 import { auth } from "@/auth";
 import UserAvatar from "@/components/UserAvatar";
 import { PostWithExtras } from "@/lib/definitions";
-import Timestamp from "./Timestamp";
 import Image from "next/image";
 import Link from "next/link";
 import Comments from "./Comments";
+import Timestamp from "./Timestamp";
 import { Card } from "./ui/card";
 import PostOptions from "./PostOptions";
 import PostActions from "./PostActions";
@@ -23,7 +23,7 @@ async function Post({ post }: { post: PostWithExtras }) {
           <UserAvatar user={post.user} />
           <div className="text-sm">
             <p className="space-x-1">
-              <span className="font-semibold">{username}</span>
+            <Link href={`/dashboard/${username}`}  className="font-semibold">{username}</Link>
               <span
                 className="font-medium text-neutral-500 dark:text-neutral-400
                       text-xs

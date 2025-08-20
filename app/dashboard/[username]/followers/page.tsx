@@ -1,14 +1,13 @@
 import FollowersModal from "@/components/FollowersModal";
 import { fetchProfile } from "@/lib/data";
 
-interface Props {
-  params: Promise<{
+async function FollowersPage({
+  params: { username },
+}: {
+  params: {
     username: string;
-  }>;
-}
-
-async function FollowersPage({ params }: Props) {
-  const { username } = await params;
+  };
+}) {
   const profile = await fetchProfile(username);
   const followers = profile?.followedBy;
 

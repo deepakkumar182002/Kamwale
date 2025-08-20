@@ -2,14 +2,13 @@ import PostView from "@/components/PostView";
 import { fetchPostById } from "@/lib/data";
 import { notFound } from "next/navigation";
 
-interface Props {
-  params: Promise<{
+type Props = {
+  params: {
     id: string;
-  }>;
-}
+  };
+};
 
-async function PostModal({ params }: Props) {
-  const { id } = await params;
+async function PostModal({ params: { id } }: Props) {
   const post = await fetchPostById(id);
 
   if (!post) {
