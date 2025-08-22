@@ -93,7 +93,7 @@ import {
 
 export const config = {
   pages: {
-    signIn: "/login",
+    signIn: "/signin",
   },
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -101,29 +101,28 @@ export const config = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    // Credentials provider for manual username/email + password login
+    // Credentials provider for manual email + password login
     CredentialsProvider({
-      name: "Credentials",
+      name: "credentials",
       credentials: {
-        identifier: { label: "Username or Email", type: "text", placeholder: "username or email" },
+        email: { label: "Email", type: "email", placeholder: "your@email.com" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
-        const identifier = credentials?.identifier?.toString() || "";
-        const password = credentials?.password?.toString() || "";
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Missing credentials");
+        }
 
-        // find user by email or username
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [{ email: identifier }, { username: identifier }],
-          },
+        // Find user by email
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
         });
 
         if (!user || !user.password) {
           throw new Error("Invalid credentials");
         }
 
-        const isValid = await bcrypt.compare(password, user.password);
+        const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
           throw new Error("Invalid credentials");
         }
@@ -132,8 +131,7 @@ export const config = {
           id: user.id,
           name: user.name,
           email: user.email,
-          username: user.username,
-        } as any;
+        };
       },
     }),
   ],
@@ -153,6 +151,16 @@ export const config = {
     },
 
     async jwt({ token, user }) {
+      // If user data is available (during sign in), use it
+      if (user) {
+        token.id = user.id;
+      }
+
+      // Check if token has email before querying
+      if (!token.email) {
+        return token;
+      }
+
       const prismaUser = await prisma.user.findFirst({
         where: {
           email: token.email,
@@ -160,7 +168,6 @@ export const config = {
       });
 
       if (!prismaUser) {
-        token.id = user.id;
         return token;
       }
 
