@@ -1,90 +1,7 @@
-// import { PrismaAdapter } from "@auth/prisma-adapter";
-// import prisma from "@/lib/prisma";
-// import GoogleProvider from "next-auth/providers/google";
-// import NextAuth, { getServerSession, type NextAuthOptions } from "next-auth";
-// import {
-//   GetServerSidePropsContext,
-//   NextApiRequest,
-//   NextApiResponse,
-// } from "next";
-
-// export const config = {
-//   pages: {
-//     signIn: "/login",
-//   },
-//   adapter: PrismaAdapter(prisma),
-//   providers: [
-//     GoogleProvider({
-//       clientId: process.env.GOOGLE_CLIENT_ID!,
-//       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-//     }),
-//   ],
-//   session: {
-//     strategy: "jwt",
-//   },
-//   callbacks: {
-//     async session({ session, token }) {
-//       if (token) {
-//         session.user.id = token.id;
-//         session.user.name = token.name;
-//         session.user.email = token.email;
-//         session.user.image = token.picture;
-//         session.user.username = token.username;
-//       }
-
-//       return session;
-//     },
-//     async jwt({ token, user }) {
-//       const prismaUser = await prisma.user.findFirst({
-//         where: {
-//           email: token.email,
-//         },
-//       });
-
-//       if (!prismaUser) {
-//         token.id = user.id;
-//         return token;
-//       }
-//       if (!prismaUser.username) {
-//         await prisma.user.update({
-//           where: {
-//             id: prismaUser.id,
-//           },
-//           data: {
-//             username: prismaUser.name?.split(" ").join("").toLowerCase(),
-//           },
-//         });
-//       }
-
-//       return {
-//         id: prismaUser.id,
-//         name: prismaUser.name,
-//         email: prismaUser.email,
-//         username: prismaUser.username,
-//         picture: prismaUser.image,
-//       };
-//     },
-//   },
-// } satisfies NextAuthOptions;
-
-// export default NextAuth(config);
-
-// // Use it in server contexts
-// export function auth(
-//   ...args:
-//     | [GetServerSidePropsContext["req"], GetServerSidePropsContext["res"]]
-//     | [NextApiRequest, NextApiResponse]
-//     | []
-// ) {
-//   return getServerSession(...args, config);
-// }
-
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
 import NextAuth, { getServerSession, type NextAuthOptions } from "next-auth";
-import bcrypt from "bcryptjs";
 import {
   GetServerSidePropsContext,
   NextApiRequest,
@@ -94,7 +11,7 @@ import {
 export const config = {
   pages: {
     signIn: "/signin",
-    error: "/signin", // Redirect to signin on error
+    error: "/signin",
   },
   // Conditionally use adapter based on environment
   ...(process.env.DATABASE_URL && {
@@ -112,39 +29,6 @@ export const config = {
         }
       }
     }),
-    // Credentials provider for manual email + password login
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email", placeholder: "your@email.com" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing credentials");
-        }
-
-        // Find user by email
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials");
-        }
-
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) {
-          throw new Error("Invalid credentials");
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        };
-      },
-    }),
   ],
   session: {
     strategy: "jwt",
@@ -153,25 +37,9 @@ export const config = {
   // Enable debug in development
   debug: process.env.NODE_ENV === "development",
   
-  // Add logger for better error tracking
-  logger: {
-    error(code, metadata) {
-      console.error("[NextAuth Error]:", code, metadata);
-    },
-    warn(code) {
-      console.warn("[NextAuth Warning]:", code);
-    },
-    debug(code, metadata) {
-      if (process.env.NODE_ENV === "development") {
-        console.log("[NextAuth Debug]:", code, metadata);
-      }
-    }
-  },
-  
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
-        // Allow sign in for all providers
         console.log("[SignIn] User:", user?.email, "Provider:", account?.provider);
         return true;
       } catch (error) {
@@ -181,9 +49,7 @@ export const config = {
     },
     
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
     },
@@ -206,12 +72,10 @@ export const config = {
 
     async jwt({ token, user, account }) {
       try {
-        // If user data is available (during sign in), use it
         if (user) {
           token.id = user.id;
         }
 
-        // Check if token has email before querying
         if (!token.email) {
           return token;
         }
