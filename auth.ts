@@ -1,12 +1,13 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
-import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import NextAuth, { getServerSession, type NextAuthOptions } from "next-auth";
 import {
   GetServerSidePropsContext,
   NextApiRequest,
   NextApiResponse,
 } from "next";
+import bcrypt from "bcryptjs";
 
 export const config = {
   pages: {
@@ -18,25 +19,44 @@ export const config = {
     adapter: PrismaAdapter(prisma),
   }),
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-          scope: "openid email profile"
-        }
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-      },
+
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
+
+          if (!user || !user.password) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            username: user.username,
+          };
+        } catch (error) {
+          console.error("[Auth Error]:", error);
+          return null;
+        }
+      }
     }),
   ],
   session: {
@@ -47,19 +67,12 @@ export const config = {
   debug: process.env.NODE_ENV === "development",
   
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
+    async signIn({ user, account }) {
       try {
         console.log("[SignIn] User:", user?.email, "Provider:", account?.provider);
-        
-        // Always allow sign in for Google OAuth
-        if (account?.provider === "google") {
-          return true;
-        }
-        
         return true;
       } catch (error) {
         console.error("[SignIn Error]:", error);
-        // Allow sign in even if there's an error to prevent blocking
         return true;
       }
     },
@@ -102,12 +115,13 @@ export const config = {
       }
     },
 
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       try {
         // If this is a new sign in, use the user data
         if (user) {
           token.id = user.id;
           token.picture = user.image;
+          token.username = user.username;
         }
 
         if (!token.email) {
@@ -134,29 +148,6 @@ export const config = {
         });
 
         if (!prismaUser) {
-          // If no user found and this is a new sign in with Google
-          if (user && account?.provider === "google") {
-            try {
-              const newUser = await prisma.user.create({
-                data: {
-                  email: token.email!,
-                  name: token.name,
-                  image: token.picture,
-                  username: await generateUniqueUsername(token.name || "user"),
-                },
-              });
-              
-              return {
-                id: newUser.id,
-                name: newUser.name,
-                email: newUser.email,
-                username: newUser.username,
-                picture: newUser.image,
-              };
-            } catch (error) {
-              console.error("[JWT User Creation Error]:", error);
-            }
-          }
           return token;
         }
 

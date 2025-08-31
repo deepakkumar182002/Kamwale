@@ -3,8 +3,6 @@ export function validateEnvVars() {
   const required = [
     'NEXTAUTH_SECRET',
     'NEXTAUTH_URL',
-    'GOOGLE_CLIENT_ID',
-    'GOOGLE_CLIENT_SECRET',
   ];
   
   const optional = [
@@ -46,8 +44,6 @@ function isValidUrl(url: string): boolean {
 export const env = {
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL!,
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
   DATABASE_URL: process.env.DATABASE_URL,
   UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
   UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
