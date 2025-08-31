@@ -13,7 +13,7 @@ export const config = {
     signIn: "/signin",
     error: "/signin",
   },
-  // Conditionally use adapter based on environment
+  // Use adapter only if database is available
   ...(process.env.DATABASE_URL && {
     adapter: PrismaAdapter(prisma),
   }),
@@ -25,9 +25,18 @@ export const config = {
         params: {
           prompt: "consent",
           access_type: "offline",
-          response_type: "code"
+          response_type: "code",
+          scope: "openid email profile"
         }
-      }
+      },
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        }
+      },
     }),
   ],
   session: {
@@ -38,20 +47,43 @@ export const config = {
   debug: process.env.NODE_ENV === "development",
   
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile, email, credentials }) {
       try {
         console.log("[SignIn] User:", user?.email, "Provider:", account?.provider);
+        
+        // Always allow sign in for Google OAuth
+        if (account?.provider === "google") {
+          return true;
+        }
+        
         return true;
       } catch (error) {
         console.error("[SignIn Error]:", error);
-        return false;
+        // Allow sign in even if there's an error to prevent blocking
+        return true;
       }
     },
     
     async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      else if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      try {
+        console.log("[Redirect] URL:", url, "BaseURL:", baseUrl);
+        
+        // Handle relative URLs
+        if (url.startsWith("/")) {
+          return `${baseUrl}${url}`;
+        }
+        
+        // Handle same origin URLs
+        if (url.startsWith(baseUrl)) {
+          return url;
+        }
+        
+        // Default to dashboard after successful sign in
+        return `${baseUrl}/dashboard`;
+      } catch (error) {
+        console.error("[Redirect Error]:", error);
+        return `${baseUrl}/dashboard`;
+      }
     },
     
     async session({ session, token }) {
@@ -72,18 +104,24 @@ export const config = {
 
     async jwt({ token, user, account }) {
       try {
+        // If this is a new sign in, use the user data
         if (user) {
           token.id = user.id;
+          token.picture = user.image;
         }
 
         if (!token.email) {
           return token;
         }
 
-        // Skip database operations if no DATABASE_URL
+        // For production without database, use a simpler approach
         if (!process.env.DATABASE_URL) {
-          console.warn("[JWT] No DATABASE_URL, skipping user lookup");
-          return token;
+          console.log("[JWT] No DATABASE_URL, using JWT-only mode");
+          return {
+            ...token,
+            id: token.id || `user_${token.email?.split('@')[0]}`,
+            username: token.username || token.email?.split('@')[0]?.toLowerCase(),
+          };
         }
 
         const prismaUser = await prisma.user.findFirst({

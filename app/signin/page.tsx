@@ -18,8 +18,22 @@ export default function SignInPage() {
 
   useEffect(() => {
     const messageParam = searchParams.get("message");
+    const errorParam = searchParams.get("error");
+    
     if (messageParam) {
       setMessage(messageParam);
+    }
+    
+    if (errorParam) {
+      if (errorParam === "Callback") {
+        setError("Authentication callback failed. This might be due to Google OAuth configuration issues. Please try again.");
+      } else if (errorParam === "OAuthSignin") {
+        setError("Error signing in with Google. Please check your internet connection and try again.");
+      } else if (errorParam === "OAuthCallback") {
+        setError("OAuth callback error. Please verify your Google OAuth settings and try again.");
+      } else {
+        setError(`Authentication error: ${errorParam}`);
+      }
     }
   }, [searchParams]);
 
@@ -47,8 +61,25 @@ export default function SignInPage() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
+  const handleGoogleSignIn = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      
+      // Clear any previous errors
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.delete('error');
+      window.history.replaceState({}, '', currentUrl.toString());
+      
+      await signIn("google", { 
+        callbackUrl: "/dashboard",
+        redirect: true
+      });
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError("Failed to initiate Google sign-in. Please try again.");
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
